@@ -18,12 +18,18 @@ FROM eclipse-temurin:25-jre
 
 WORKDIR /app
 
-RUN useradd --system --no-create-home appuser
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends curl \
+    && rm -rf /var/lib/apt/lists/* \
+    && useradd --system --no-create-home appuser
 
 COPY --from=build /app/target/*.jar app.jar
 
 USER appuser
 
 EXPOSE 8888
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \
+  CMD curl --fail --silent http://localhost:8888/actuator/health || exit 1
 
 ENTRYPOINT ["java", "-jar", "app.jar"]
